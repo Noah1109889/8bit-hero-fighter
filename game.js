@@ -116,6 +116,11 @@ const HEROES = {
   }
 };
 
+function getRandomHero() {
+  const heroNames = Object.keys(HEROES);
+  return heroNames[Math.floor(Math.random() * heroNames.length)];
+}
+
 function makePlayer(type, x, side) {
   const data = HEROES[type];
   return {
@@ -145,8 +150,8 @@ function makePlayer(type, x, side) {
   };
 }
 
-let p1 = makePlayer("werebeast", 220, 1);
-let p2 = makePlayer("slayer", 680, -1);
+let p1 = makePlayer(getRandomHero(), 220, 1);
+let p2 = makePlayer(getRandomHero(), 680, -1);
 
 function updatePlayer(player, enemy, input) {
   if (world.gameOver) return;
@@ -352,64 +357,8 @@ function drawArena() {
   }
 }
 
-function drawHeroSelect() {
-  ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = "#7bdcff";
-  ctx.font = "bold 20px monospace";
-  ctx.textAlign = "center";
-  ctx.fillText("SELECT YOUR HERO", canvas.width / 2, 40);
-
-  ctx.font = "14px monospace";
-  const heroNames = Object.keys(HEROES);
-  const heroCols = 3;
-  const heroWidth = canvas.width / heroCols;
-  const startY = 100;
-
-  let idx = 0;
-  for (let y = 0; y < 2; y++) {
-    for (let x = 0; x < heroCols && idx < heroNames.length; x++) {
-      const heroType = heroNames[idx];
-      const heroData = HEROES[heroType];
-      const cx = heroWidth * x + heroWidth / 2;
-      const cy = startY + y * 140;
-
-      // Hero box
-      ctx.fillStyle = "#1a2d3d";
-      ctx.fillRect(cx - 80, cy - 40, 160, 100);
-      ctx.strokeStyle = heroData.color;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(cx - 80, cy - 40, 160, 100);
-
-      // Hero name
-      ctx.fillStyle = heroData.color;
-      ctx.fillText(heroData.name, cx, cy - 15);
-
-      // Hero description
-      ctx.fillStyle = "#bbb";
-      ctx.font = "10px monospace";
-      ctx.fillText(heroData.description, cx, cy + 5);
-      ctx.font = "11px monospace";
-      ctx.fillText(`HP: ${heroData.maxHp}`, cx, cy + 20);
-
-      // Hero number
-      ctx.fillStyle = "#7bdcff";
-      ctx.font = "bold 14px monospace";
-      ctx.fillText(`Press ${idx + 1}`, cx, cy + 40);
-
-      idx++;
-    }
-  }
-
-  ctx.fillStyle = "#999";
-  ctx.font = "12px monospace";
-  ctx.textAlign = "left";
-  ctx.fillText("P1: Press 1-5 | P2: Press Q-O", 20, canvas.height - 20);
-}
-
 function drawCenterText() {
-  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  ctx.fillStyle = "#7bdcff";
   ctx.font = "12px monospace";
   ctx.textAlign = "center";
   ctx.fillText(`${p1.name} vs ${p2.name}`, canvas.width / 2, 26);
@@ -427,7 +376,7 @@ function checkWin() {
     ctx.fillStyle = "#fbe66f";
     ctx.font = "bold 48px monospace";
     ctx.textAlign = "center";
-    ctx.fillText(`${winner} WINS!", canvas.width / 2, 200);
+    ctx.fillText(`${winner} WINS!`, canvas.width / 2, 200);
 
     ctx.fillStyle = "#7bdcff";
     ctx.font = "16px monospace";
@@ -437,116 +386,67 @@ function checkWin() {
   return false;
 }
 
-let gameState = "heroSelect"; // heroSelect, playing, gameOver
-
 function resetGame() {
   world.gameOver = false;
   world.winner = null;
   world.shake = 0;
   world.timer = 0;
-  p1 = makePlayer("werebeast", 220, 1);
-  p2 = makePlayer("slayer", 680, -1);
-  gameState = "heroSelect";
+  p1 = makePlayer(getRandomHero(), 220, 1);
+  p2 = makePlayer(getRandomHero(), 680, -1);
 }
 
 function gameLoop() {
   world.timer++;
 
-  // Handle hero selection
-  if (gameState === "heroSelect") {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawArena();
-    drawHeroSelect();
+  const shakeX = world.shake > 0 ? (Math.random() - 0.5) * world.shake : 0;
+  const shakeY = world.shake > 0 ? (Math.random() - 0.5) * world.shake : 0;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // P1 selection
-    const p1HeroKeys = ["1", "2", "3", "4", "5"];
-    const p1HeroNames = Object.keys(HEROES);
-    for (let i = 0; i < p1HeroKeys.length && i < p1HeroNames.length; i++) {
-      if (keys[p1HeroKeys[i]]) {
-        p1.type = p1HeroNames[i];
-        p1.data = HEROES[p1HeroNames[i]];
-        p1.name = p1.data.name;
-        p1.color = p1.data.color;
-        p1.maxHp = p1.data.maxHp;
-        p1.hp = p1.maxHp;
-      }
-    }
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
 
-    // P2 selection
-    const p2HeroKeys = ["q", "w", "e", "r", "t"];
-    for (let i = 0; i < p2HeroKeys.length && i < p1HeroNames.length; i++) {
-      if (keys[p2HeroKeys[i]]) {
-        p2.type = p1HeroNames[i];
-        p2.data = HEROES[p1HeroNames[i]];
-        p2.name = p2.data.name;
-        p2.color = p2.data.color;
-        p2.maxHp = p2.data.maxHp;
-        p2.hp = p2.maxHp;
-      }
-    }
+  drawArena();
 
-    // Start game
-    if (keys[" "]) {
-      gameState = "playing";
-    }
-  } else if (gameState === "playing") {
-    const shakeX = world.shake > 0 ? (Math.random() - 0.5) * world.shake : 0;
-    const shakeY = world.shake > 0 ? (Math.random() - 0.5) * world.shake : 0;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const input1 = {
+    left: keys["a"],
+    right: keys["d"],
+    jump: keys["w"],
+    light: keys["j"],
+    heavy: keys["k"],
+    special: keys["l"]
+  };
 
-    ctx.save();
-    ctx.translate(shakeX, shakeY);
+  const input2 = {
+    left: keys["arrowleft"],
+    right: keys["arrowright"],
+    jump: keys["arrowup"],
+    light: keys["1"],
+    heavy: keys["2"],
+    special: keys["3"]
+  };
 
-    drawArena();
+  updatePlayer(p1, p2, input1);
+  updatePlayer(p2, p1, input2);
 
-    const input1 = {
-      left: keys["a"],
-      right: keys["d"],
-      jump: keys["w"],
-      light: keys["j"],
-      heavy: keys["k"],
-      special: keys["l"]
-    };
+  drawPlayer(p1);
+  drawPlayer(p2);
+  drawCenterText();
 
-    const input2 = {
-      left: keys["arrowleft"],
-      right: keys["arrowright"],
-      jump: keys["arrowup"],
-      light: keys["1"],
-      heavy: keys["2"],
-      special: keys["3"]
-    };
+  ctx.restore();
 
-    updatePlayer(p1, p2, input1);
-    updatePlayer(p2, p1, input2);
-
-    drawPlayer(p1);
-    drawPlayer(p2);
-    drawCenterText();
-
-    ctx.restore();
-
-    world.shake *= 0.75;
-    if (world.shake < 0.1) world.shake = 0;
-
-    if (!checkWin()) {
-      requestAnimationFrame(gameLoop);
-    } else {
-      gameState = "gameOver";
-      if (keys["r"]) {
-        resetGame();
-        requestAnimationFrame(gameLoop);
-      }
-    }
-    return;
-  }
+  world.shake *= 0.75;
+  if (world.shake < 0.1) world.shake = 0;
 
   // Handle restart
   if (keys["r"]) {
     resetGame();
   }
 
-  requestAnimationFrame(gameLoop);
+  if (!checkWin()) {
+    requestAnimationFrame(gameLoop);
+  } else if (keys["r"]) {
+    requestAnimationFrame(gameLoop);
+  }
 }
 
 requestAnimationFrame(gameLoop);
