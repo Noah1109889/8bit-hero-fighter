@@ -1,0 +1,16 @@
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node modules (if using build tools in future)
+node_modules/
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
